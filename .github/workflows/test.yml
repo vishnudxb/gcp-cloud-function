@@ -1,0 +1,41 @@
+name: Function Test
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    name: Run tests for google cloud function
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: actions/cache@v1
+        id: pip-cache
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-develop-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-develop-pip-
+
+      - uses: actions/cache@v1
+        id: tox-cache
+        with:
+          path: .tox
+          key: ${{ runner.os }}-develop-tox-${{ hashFiles('tox.ini') }}
+          restore-keys: |
+            ${{ runner.os }}-develop-tox-
+
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+
+     # Running Test
+      - name: Running Test
+        run: |
+          pip install -r requirements.txt
+          pytest func_test.py

@@ -1,0 +1,48 @@
+name: Release Google cloud function
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/cache@v1
+        id: pip-cache
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-develop-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-develop-pip-
+
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+
+      # Install python requirements packages
+      - name: Install python requirements packages
+        run: |
+          pip install -r requirements.txt
+
+      # Authenticate to Google Cloud function
+      - name: Authenticate to Google Cloud function
+        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          version: '285.0.0'
+          project_id: ${{ secrets.GKE_PROJECT }}
+          service_account_email: ${{ secrets.GKE_EMAIL }}
+          service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+
+      - name: Deploy to Google Cloud function
+        run: |
+          gcloud functions deploy $GCP_FUNCTION_NAME --entry-point $GCP_FUNCTION_ENTRYPOINT --runtime python37 --trigger-http
+        env:
+          GCP_FUNCTION_NAME: ${{ secrets.GCP_FUNCTION_NAME }}
+          GCP_FUNCTION_ENTRYPOINT: ${{ secrets.GCP_FUNCTION_ENTRYPOINT }}
